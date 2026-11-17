@@ -1,0 +1,57 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+
+@theme {
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    
+    --color-finora-primary: #43A047;
+    --color-finora-hover: #388E3C;
+    --color-finora-dark: #2E7D32;
+    --color-finora-light: #E8F5E9;
+    --color-finora-income: #2E7D32;
+    --color-finora-expense: #D32F2F;
+}
+
+/* Aksesibilitas Khusus Orang Tua / Senior Mode */
+.elderly-root {
+    transition: font-size 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.font-size-large {
+    font-size: 125%;
+}
+
+.font-size-xlarge {
+    font-size: 160%;
+}
+
+.high-contrast-mode {
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+}
+
+.high-contrast-mode .bg-white,
+.high-contrast-mode .bg-slate-50,
+.high-contrast-mode .bg-gray-50 {
+    background-color: #FFFFFF !important;
+    border-color: #000000 !important;
+}
+
+.high-contrast-mode .text-gray-500,
+.high-contrast-mode .text-gray-600,
+.high-contrast-mode .text-slate-500,
+.high-contrast-mode .text-slate-600 {
+    color: #000000 !important;
+    font-weight: 600 !important;
+}
+
+.high-contrast-mode button,
+.high-contrast-mode a.btn-action,
+.high-contrast-mode input,
+.high-contrast-mode select {
+    border-width: 3px !important;
+    border-color: #000000 !important;
+}
