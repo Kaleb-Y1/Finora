@@ -25,12 +25,3 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
-# Finora - Private Data
-/storage/app/private/
-/storage/app/backups/
-/storage/logs/
-/backups/
-*.sql
-*.sql.gz
-*.dump
-*.bak

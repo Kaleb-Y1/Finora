@@ -17,6 +17,8 @@ Route::get('/', function () {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
+    Route::get('/auth/google', [\App\Http\Controllers\Auth\GoogleLoginController::class, 'redirect'])->middleware('throttle:10,1')->name('auth.google.redirect');
+    Route::get('/auth/google/callback', [\App\Http\Controllers\Auth\GoogleLoginController::class, 'callback'])->middleware('throttle:10,1')->name('auth.google.callback');
 });
 
 // --- Rute Terproteksi (Harus Login) ---
@@ -67,13 +69,6 @@ Route::middleware('auth')->group(function () {
         Route::get('transactions/expense/create',fn()=>redirect()->route('transactions.create',['type'=>'expense']))->name('transactions.expense.create');
     });
 
-    // Manajemen Kategori (Multi-Ledger — terisolasi per buku aktif)
-    Route::middleware('book.active')->group(function () {
-        Route::resource('categories', \App\Http\Controllers\Finance\CategoryController::class);
-        Route::patch('categories/{category}/archive', [\App\Http\Controllers\Finance\CategoryController::class, 'archive'])->name('categories.archive');
-        Route::patch('categories/{category}/restore', [\App\Http\Controllers\Finance\CategoryController::class, 'restore'])->name('categories.restore');
-    });
-
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Finance\ReportController::class,'index'])->middleware('book.active')->name('index');
         Route::get('/csv', [\App\Http\Controllers\Finance\ReportController::class,'csv'])->middleware('book.active')->name('csv');
@@ -83,11 +78,17 @@ Route::middleware('auth')->group(function () {
         Route::get('/', fn () => view('dashboard.umum'))->name('show');
     });
 
-    // --- Rute Khusus Admin Sistem (Dilindungi Middleware role:admin) ---
+    // Admin-only: backend authorization applies to every endpoint.
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
-        Route::get('/users', fn () => view('dashboard.umum'))->name('users.index');
-        Route::get('/audit', fn () => view('dashboard.umum'))->name('audit.index');
-        Route::get('/logs/activity', fn () => view('dashboard.umum'))->name('logs.activity');
-        Route::get('/backup', fn () => view('dashboard.umum'))->name('backup.index');
+        Route::get('/users', [\App\Http\Controllers\Admin\SystemController::class, 'users'])->name('users.index');
+        Route::post('/users', [\App\Http\Controllers\Admin\SystemController::class, 'storeUser'])->name('users.store');
+        Route::put('/users/{user}', [\App\Http\Controllers\Admin\SystemController::class, 'updateUser'])->name('users.update');
+        Route::get('/audit', [\App\Http\Controllers\Admin\SystemController::class, 'audit'])->name('audit.index');
+        Route::get('/logs/activity', [\App\Http\Controllers\Admin\SystemController::class, 'activity'])->name('logs.activity');
+        Route::get('/logs/error', [\App\Http\Controllers\Admin\SystemController::class, 'errors'])->name('logs.error');
+        Route::get('/logs/login', [\App\Http\Controllers\Admin\SystemController::class, 'logins'])->name('logs.login');
+        Route::get('/backup', [\App\Http\Controllers\Admin\SystemController::class, 'backups'])->name('backup.index');
+        Route::post('/backup', [\App\Http\Controllers\Admin\SystemController::class, 'createBackup'])->name('backup.store');
+        Route::get('/backup/{backup}/download', [\App\Http\Controllers\Admin\SystemController::class, 'downloadBackup'])->name('backup.download');
     });
 });

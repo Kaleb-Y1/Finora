@@ -49,7 +49,7 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                     </div>
                     <input type="text" id="login" name="login" value="{{ old('login') }}" required autofocus
-                        placeholder="Contoh: budi atau budi@finora.local"
+                        placeholder="Username atau email akun Anda"
                         class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 text-sm focus:bg-white focus:ring-2 focus:ring-[#43A047] focus:border-[#43A047] transition">
                 </div>
             </div>
@@ -92,22 +92,11 @@
                 Masuk ke Finora
             </button>
         </form>
-
-        <!-- Quick Demo Account Pills -->
-        <div class="mt-8 pt-6 border-t border-slate-100">
-            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2.5 text-center">Akun Percobaan (Password: password123)</p>
-            <div class="grid grid-cols-3 gap-2 text-xs">
-                <button type="button" onclick="fillAccount('admin')" class="py-2 px-1 text-center bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg border border-purple-200 font-medium transition cursor-pointer">
-                    👑 Admin<br><span class="text-[10px] text-purple-500 font-mono">admin</span>
-                </button>
-                <button type="button" onclick="fillAccount('budi')" class="py-2 px-1 text-center bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg border border-blue-200 font-medium transition cursor-pointer">
-                    👤 Umum<br><span class="text-[10px] text-blue-500 font-mono">budi</span>
-                </button>
-                <button type="button" onclick="fillAccount('opasantoso')" class="py-2 px-1 text-center bg-green-50 hover:bg-green-100 text-green-700 rounded-lg border border-green-200 font-medium transition cursor-pointer">
-                    👴 Orang Tua<br><span class="text-[10px] text-green-600 font-mono">opasantoso</span>
-                </button>
-            </div>
+        @if(config('services.google.client_id') && config('services.google.client_secret'))
+        <div class="mt-6 border-t border-slate-200 pt-5">
+            <a href="{{ route('auth.google.redirect') }}" class="block w-full text-center rounded-xl border border-slate-300 bg-white py-3 px-4 font-semibold text-slate-800 hover:bg-slate-50">Masuk dengan Google</a>
         </div>
+        @endif
     </div>
 </div>
 
@@ -128,9 +117,5 @@ function togglePasswordVisibility() {
     }
 }
 
-function fillAccount(username) {
-    document.getElementById('login').value = username;
-    document.getElementById('password').value = 'password123';
-}
 </script>
 @endsection

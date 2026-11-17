@@ -19,12 +19,23 @@ class TransactionController extends Controller {
  public function create(Request $r){return view('finance.transactions.form',['item'=>null,'categories'=>$this->book($r)->categories()->where('status','active')->get(),'type'=>in_array($r->query('type'),['income','expense'])?$r->query('type'):'expense']);}
  public function edit(Request $r,Transaction $transaction){$this->transaction($r,$transaction);return view('finance.transactions.form',['item'=>$transaction,'categories'=>$this->book($r)->categories()->where(function($q)use($transaction){$q->where('status','active')->orWhere('id',$transaction->category_id);})->get(),'type'=>$transaction->type]);}
  private function validated(Request $r,Book $book): array {
-  return $r->validate(['title'=>'required|string|max:255','type'=>['required',Rule::in(['income','expense'])], 'category_id'=>['required','integer',Rule::exists('categories','id')->where('book_id',$book->id)->where('type',$r->input('type'))], 'amount'=>'required|numeric|gt:0|decimal:0,2|max:9999999999999','transaction_date'=>'required|date|after_or_equal:'.$book->opening_balance_date->format('Y-m-d'),'description'=>'nullable|string|max:3000','attachment'=>'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120']);
+  $r->merge(['amount'=>preg_replace('/\D/', '', (string) $r->input('amount'))]);
+  return $r->validate(['title'=>'required|string|max:255','type'=>['required',Rule::in(['income','expense'])], 'category_id'=>['nullable','integer',Rule::exists('categories','id')->where('book_id',$book->id)->where('type',$r->input('type'))], 'category_name'=>'nullable|required_without:category_id|string|max:100', 'amount'=>'required|integer|min:1|max:9999999999999','transaction_date'=>'required|date|after_or_equal:'.$book->opening_balance_date->format('Y-m-d'),'description'=>'nullable|string|max:3000','attachment'=>'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120']);
  }
- public function store(Request $r){$book=$this->book($r);$data=$this->validated($r,$book);unset($data['attachment']);$key=$r->validate(['request_key'=>'required|uuid'])['request_key'];
+ private function resolveCategory(Book $book,array $data):array {
+  $name=trim((string)($data['category_name']??''));
+  if($name!=='') {
+   $category=Category::firstOrCreate(['book_id'=>$book->id,'type'=>$data['type'],'name'=>$name],['status'=>'active']);
+   if($category->status!=='active')$category->update(['status'=>'active']);
+   $data['category_id']=$category->id;
+  }
+  unset($data['category_name']);
+  return $data;
+ }
+ public function store(Request $r){$book=$this->book($r);$data=$this->validated($r,$book);$data=$this->resolveCategory($book,$data);unset($data['attachment']);$key=$r->validate(['request_key'=>'required|uuid'])['request_key'];
   $item=DB::transaction(function()use($r,$book,$data,$key){$existing=$book->transactions()->where('reference_no',$key)->first();if($existing)return $existing;$item=$book->transactions()->create($data+['created_by'=>$r->user()->id,'reference_no'=>$key]);return $item;});
   if($item->wasRecentlyCreated)$this->upload($r,$item);return redirect()->route('transactions.index')->with('success','Transaksi tersimpan.');}
- public function update(Request $r,Transaction $transaction){$this->transaction($r,$transaction);$data=$this->validated($r,$this->book($r));unset($data['attachment']);$transaction->update($data);$this->upload($r,$transaction);return redirect()->route('transactions.index')->with('success','Transaksi diperbarui.');}
+ public function update(Request $r,Transaction $transaction){$this->transaction($r,$transaction);$data=$this->validated($r,$this->book($r));$data=$this->resolveCategory($this->book($r),$data);unset($data['attachment']);$transaction->update($data);$this->upload($r,$transaction);return redirect()->route('transactions.index')->with('success','Transaksi diperbarui.');}
  private function upload(Request $r,Transaction $t):void {if(!$r->hasFile('attachment'))return;$f=$r->file('attachment');$path=$f->store('finora/attachments','local');$t->attachments()->create(['file_name'=>$f->getClientOriginalName(),'file_path'=>$path,'mime_type'=>$f->getMimeType(),'file_size'=>$f->getSize(),'uploaded_by'=>$r->user()->id]);}
  public function destroy(Request $r,Transaction $transaction){$this->transaction($r,$transaction);$transaction->delete();return redirect()->route('transactions.index')->with('success','Transaksi dihapus.');}
  public function download(Request $r,TransactionAttachment $attachment){$this->transaction($r,$attachment->transaction);abort_unless(Storage::disk('local')->exists($attachment->file_path),404);return Storage::disk('local')->download($attachment->file_path,$attachment->file_name);}
